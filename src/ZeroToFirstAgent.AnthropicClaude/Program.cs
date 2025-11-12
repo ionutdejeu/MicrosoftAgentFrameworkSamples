@@ -15,11 +15,7 @@ using Microsoft.Extensions.AI;
 const string apiKey = "<yourApiKey>";
 const string model = AnthropicModels.Claude35Haiku;
 
-AnthropicClient anthropicClient = new AnthropicClient(new APIAuthentication(apiKey));
-
-
-
-IChatClient client = anthropicClient.Messages.AsBuilder().Build();
+IChatClient client = new AnthropicClient(new APIAuthentication(apiKey)).Messages.AsBuilder().Build();
 
 ChatClientAgentRunOptions chatClientAgentRunOptions = new(new()
 {

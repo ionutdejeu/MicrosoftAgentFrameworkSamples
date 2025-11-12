@@ -141,7 +141,7 @@ public class AgentFactoryAzureOpenAI(AzureOpenAIAgentFactoryConfiguration config
 
         if (responsesApiReasoningOptions != null)
         {
-            if (responsesApiReasoningOptions.ReasoningEffort != null || responsesApiReasoningOptions.ReasoningSummaryVerbosity.HasValue)
+            if (responsesApiReasoningOptions.ReasoningEffort != null || responsesApiReasoningOptions.ReasoningSummaryVerbosity != null)
             {
                 anyOptionsSet = true;
                 chatOptions.RawRepresentationFactory = _ =>

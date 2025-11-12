@@ -1,9 +1,11 @@
 ﻿using AgentFramework.Toolkit.AIAgents;
-using AgentFramework.Toolkit.AIAgents.Models;
 using Microsoft.Agents.AI;
+using Shared;
+using System.Text;
+using AgentFramework.Toolkit.AIAgents.Models;
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
-using Shared;
+using Shared.Extensions;
 
 #pragma warning disable OPENAI001
 
@@ -20,39 +22,47 @@ public class WithToolkit
             ApiKey = configuration.AzureOpenAiKey
         });
 
-        Agent commonAgent = agentFactory.CreateAgent(new ResponsesApiReasoning
-        {
-            DeploymentModelName = "gpt-5-mini",
-            ReasoningEffort = ResponseReasoningEffortLevel.Low,
-            ReasoningSummaryVerbosity = ResponseReasoningSummaryVerbosity.Detailed,
-            Tools = [AIFunctionFactory.Create(GetWeather)],
-        });
-
-        ChatClientAgentRunResponse<Weather> commonResponse = await commonAgent.RunAsync<Weather>("What is the weather like in Paris?");
-        Weather commonWeather = commonResponse.Result;
-
-        Agent fullBlownAgent = agentFactory.CreateAgent(new ResponsesApiReasoning
-        {
-            Id = "1234",
-            Name = "MyAgent",
-            Description = "The description of my agent",
-            Instructions = "Speak like a pirate",
-            DeploymentModelName = "gpt-5-mini",
-            ReasoningEffort = ResponseReasoningEffortLevel.Low,
-            ReasoningSummaryVerbosity = ResponseReasoningSummaryVerbosity.Detailed,
-            NetworkTimeout = TimeSpan.FromMinutes(5),
-            Tools = [AIFunctionFactory.Create(GetWeather)],
-            RawToolCallDetails = details => { Console.WriteLine(details.ToString()); },
-            RawHttpCallDetails = details =>
+        AgentFramework.Toolkit.AIAgents.Models.
+            /*
+            Agent reasonAgent = agentFactory.Create(new ResponsesApiReasoningOptions
             {
-                Console.WriteLine($"URL: {details.RequestUrl}");
-                Console.WriteLine($"Request: {details.RequestJson}");
-                Console.WriteLine($"Response: {details.ResponseJson}");
-            }
-        });
+                DeploymentModelName = "gpt-5-mini",
+                ReasoningEffort = ResponseReasoningEffortLevel.Low,
+                ReasoningSummaryVerbosity = ResponseReasoningSummaryVerbosity.Detailed,
+            });
 
-        ChatClientAgentRunResponse<Weather> fullBlownResponse = await fullBlownAgent.RunAsync<Weather>("What is the weather like in Paris?");
-        Weather fullBlownResponseWeather = fullBlownResponse.Result;
+            AgentRunResponse response0 = await reasonAgent.RunAsync("How to make soup?");
+            Console.WriteLine(response0);
+            response0.Usage.OutputAsInformation();*/
+            Agent agent = agentFactory.CreateAgent(new ResponsesApiNonReasoning()
+            {
+                DeploymentModelName = "gpt-4.1-mini",
+                Temperature = 0,
+                RawHttpCallDetails = details =>
+                {
+                    Utils.WriteLineGreen(details.RequestUrl);
+                    Utils.WriteLineDarkGray(details.RequestJson);
+                    Utils.Separator();
+                    Utils.WriteLineDarkGray(details.ResponseJson);
+                },
+
+                Tools = [AIFunctionFactory.Create(GetWeather)],
+                /*
+                RawToolCallDetails = details =>
+                {
+                    StringBuilder functionCallDetails = new();
+                    functionCallDetails.Append($"- Tool Call: '{details.Context.Function.Name}'");
+                    if (details.Context.Arguments.Count > 0)
+                    {
+                        functionCallDetails.Append($" (Args: {string.Join(",", details.Context.Arguments.Select(x => $"[{x.Key} = {x.Value}]"))}");
+                    }
+
+                    Utils.WriteLineDarkGray(functionCallDetails.ToString());
+                }*/
+            });
+
+        ChatClientAgentRunResponse<Weather> response = await agent.RunAsync<Weather>("How is the weather in Aarhus?");
+        Console.WriteLine(response);
     }
 
     public static string GetWeather(string city)
@@ -63,7 +73,6 @@ public class WithToolkit
     public class Weather
     {
         public required string City { get; set; }
-        public required int DegreesCelsius { get; set; }
-        public required int DegreesFahrenheit { get; set; }
+        public required string Condition { get; set; }
     }
 }

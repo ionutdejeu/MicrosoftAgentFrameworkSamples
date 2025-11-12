@@ -4,7 +4,6 @@
 //- MCP: https://youtu.be/Y5IKdt9vdJM
 
 #pragma warning disable MEAI001
-using Azure.AI.OpenAI;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OpenAI;
@@ -15,9 +14,13 @@ using System.Text;
 using ToolCalling.Advanced.Tools;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
+Dictionary<string, string> env = EnvLoader.LoadEnv(".env");
+
 Configuration configuration = ConfigurationManager.GetConfiguration();
 
-AzureOpenAIClient client = new(new Uri(configuration.AzureOpenAiEndpoint), new ApiKeyCredential(configuration.AzureOpenAiKey));
+ 
+// Use OpenAI client with the OpenAI API key instead of Azure OpenAI
+OpenAIClient client = new(env["OPENAI_API_KEY"]);
 
 //Get tools via reflection
 FileSystemTools target = new();
@@ -28,7 +31,7 @@ List<AITool> listOfTools = methods.Select(x => AIFunctionFactory.Create(x, targe
 listOfTools.Add(new ApprovalRequiredAIFunction(AIFunctionFactory.Create(DangerousTools.SomethingDangerous)));
 
 AIAgent agent = client
-    .GetChatClient(configuration.ChatDeploymentName)
+    .GetChatClient(env["CHAT_DEPLOYMENT_NAME"])
     .CreateAIAgent(
         instructions: "You are a File Expert. When working with files you need to provide the full path; not just the filename",
         tools: listOfTools
